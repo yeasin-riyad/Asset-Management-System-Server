@@ -565,13 +565,86 @@ app.get('/limited-stock-items/:email',verifyJWT, async (req, res) => {
 
 
 
+// Get all Employee Requested Assets for hr manager which status is pending or Approved or rejected from Employee Requested Assets....
+app.get('/employee-requested-assets/:email', verifyJWT, async (req, res) => {
+  const email = req.params.email;
+
+  const query = {
+    'asset.HREmail': email,
+    status: { $in: ["pending", "approved", "rejected"] }
+  };
+
+  try {
+    const assets = await Employee_Requests.find(query).toArray();
+    res.send(assets);
+  } catch (error) {
+    res.status(500).send({ message: "Error retrieving assets", error });
+  }
+});
+
+
 // Get all Employee Requested Assets for hr manager which status is pending from Employee Requested Assets....
-app.get('/employee-requested-assets/:email',verifyJWT,async(req,res)=>{
-  const email=req.params.email;
-  const query={'asset.HREmail':email,status:"pending"}
-  const assets=await Employee_Requests.find(query).toArray()
-  res.send(assets)
-})
+app.get('/employee-requested-assets-pending/:email', verifyJWT, async (req, res) => {
+  const email = req.params.email;
+
+  const query = {
+    'user.email': email,
+    status:"pending"
+  };
+
+  try {
+    const assets = await Employee_Requests.find(query).toArray();
+    res.send(assets);
+  } catch (error) {
+    res.status(500).send({ message: "Error retrieving assets", error });
+  }
+});
+
+//  API for Recent Approvals
+
+app.get('/recent-approvals/:email', verifyJWT, async (req, res) => {
+  const email = req.params.email;
+
+  try {
+    const query = {
+      'asset.HREmail': email,
+      'user.status': 'approved'
+    };
+    const options = {
+      sort: { 'user.approvalDate': -1 }, // Sort by most recent approvals
+      limit: 5 // Limit to the 5 most recent approvals
+    };
+
+    const recentApprovals = await Employee_Requests.find(query, options).toArray();
+    res.send(recentApprovals);
+  } catch (error) {
+    res.status(500).send({ message: 'Failed to fetch recent approvals', error });
+  }
+});
+
+
+// API for Asset Request History
+
+app.get('/asset-request-history/:email', verifyJWT, async (req, res) => {
+  const email = req.params.email;
+
+  try {
+    const query = {
+      'asset.HREmail': email,
+      'user.status': { $in: ['pending', 'approved', 'rejected'] } // Fetch all relevant statuses
+    };
+    const options = {
+      sort: { 'user.requestDate': -1 } // Sort by most recent requests
+    };
+
+    const requestHistory = await Employee_Requests.find(query, options).toArray();
+    res.send(requestHistory);
+  } catch (error) {
+    res.status(500).send({ message: 'Failed to fetch asset request history', error });
+  }
+});
+
+
 
 //Update Status by The Hr...
 app.patch('/update-status/:id',verifyJWT,async(req,res)=>{
