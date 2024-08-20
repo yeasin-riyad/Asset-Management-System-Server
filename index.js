@@ -465,7 +465,6 @@ app.get('/my-hr/:email',verifyJWT,async(req,res)=>{
 })
 
 // Get user Information.....
-
 app.get('/my-Info/:email',verifyJWT,async(req,res)=>{
   const email=req.params.email;
   const query={email}
@@ -566,7 +565,7 @@ app.get('/limited-stock-items/:email',verifyJWT, async (req, res) => {
 
 
 
-// Get all Assets for hr manager from Employee Requested Assets....
+// Get all Employee Requested Assets for hr manager which status is pending from Employee Requested Assets....
 app.get('/employee-requested-assets/:email',verifyJWT,async(req,res)=>{
   const email=req.params.email;
   const query={'asset.HREmail':email,status:"pending"}
