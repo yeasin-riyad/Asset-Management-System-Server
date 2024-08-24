@@ -4,6 +4,7 @@ const cors=require('cors');
 require('dotenv').config(); 
 
 
+
 const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
@@ -253,7 +254,7 @@ app.delete('/employee-requested/:id',verifyJWT,async(req,res)=>{
 
    })
 
-  //  Delete an Asset by the user
+  //  Delete an Asset by the Manager....
   app.delete('/manager-assets/:id',verifyJWT,async(req,res)=>{
     const id=req.params.id;
     const query={_id : new ObjectId(id)}
@@ -261,16 +262,31 @@ app.delete('/employee-requested/:id',verifyJWT,async(req,res)=>{
     res.send(result)
    })
 
-  //  Delete All Assets for a specific user....
-  app.delete('/delete-assets/:email',verifyJWT,async(req,res)=>{
-    const email=req.params.email;
-    const query={'user.email':email};
-    const anotherQuery={email}
-    const result=await Employee_Requests.deleteMany(query);
-    const result1=await Users.deleteOne(anotherQuery)
-    res.send(result)
+ // Delete All Assets for a specific user and remove specific properties from the user document
+app.delete('/remove-team-member/:email', verifyJWT, async (req, res) => {
+  const email = req.params.email;
 
-  })
+  // Query to delete all assets related to the user
+  const assetQuery = { 'user.email': email };
+  const deleteAssetsResult = await Employee_Requests.deleteMany(assetQuery);
+
+  // Query to remove specific properties from the user document
+  const userQuery = { email };
+  const update = {
+    $unset: {
+      HrEmail: "",
+      companyLogoUrl: "",
+      companyName: ""
+    }
+  };
+  const updateUserResult = await Users.updateOne(userQuery, update);
+
+  res.send({
+    deleteAssetsResult,
+    updateUserResult
+  });
+});
+
 
   //  Add a product by the HR
   app.post('/manager-assets',verifyJWT,async(req,res)=>{
@@ -287,23 +303,44 @@ app.delete('/employee-requested/:id',verifyJWT,async(req,res)=>{
 
 // Update Any Property in Assets........
 
-app.patch('/assets/:id',verifyJWT,async(req,res)=>{
-  const { quantity } = req.body;
+app.patch('/assets/:id', verifyJWT, async (req, res) => {
+  try {
+    const { quantity } = req.body; // Extract quantity from request body
+    const id = req.params?.id; // Extract id from request parameters
+    const trimmedId = id.trim();
+   
 
-  const id=req.params.id;
-  const query={_id : new ObjectId(id)}
-  const updateDoc = {
-    $set: {
-      
-        productQuantity:quantity
+    // Validate the id format before creating ObjectId
+    if (!ObjectId.isValid(trimmedId)) {
+      return res.status(400).json({ message: 'Invalid asset ID' });
+    }
 
-    },
-  };
+    const query = { _id: new ObjectId(id) };
 
-  const result=await Assets.updateOne(query,updateDoc)
-  res.send(result)
+    // Create the update document
+    const updateDoc = {
+      $set: {
+        productQuantity: quantity, // Set the productQuantity to the new quantity value
+      },
+    };
 
-})
+    // Update the document in the database
+    const result = await Assets.updateOne(query, updateDoc);
+
+    // Check if the update was successful
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: 'Asset not found' });
+    }
+
+    // Send the result back to the client
+    res.send(result);
+  } catch (error) {
+    console.error('Error updating asset:', error);
+    res.status(500).json({ message: 'An error occurred while updating the asset' });
+  }
+});
+
+
 
 // Post An Asset in Employee Request Collection.............
 
@@ -453,7 +490,7 @@ app.get('/unaffiliated-users/:email',verifyJWT, async (req, res) => {
       res.status(500).send({ message: 'An error occurred', error });
     }
   });
-  
+ 
 
 //Check Who is MY HR Manager.......
 app.get('/my-hr/:email',verifyJWT,async(req,res)=>{
@@ -583,13 +620,20 @@ app.get('/employee-requested-assets/:email', verifyJWT, async (req, res) => {
 });
 
 
-// Get all Employee Requested Assets for hr manager which status is pending from Employee Requested Assets....
+// Get all Employee Requested Assets for HR manager where the status is pending
 app.get('/employee-requested-assets-pending/:email', verifyJWT, async (req, res) => {
   const email = req.params.email;
+  const search = req.query.search;
 
   const query = {
-    'user.email': email,
-    status:"pending"
+    'asset.HREmail': email,
+    status: "pending",
+    ...(search && { 
+      $or: [
+        { 'user.name': { $regex: search, $options: 'i' } },
+        { 'user.email': { $regex: search, $options: 'i' } }
+      ]
+    })
   };
 
   try {
@@ -599,6 +643,24 @@ app.get('/employee-requested-assets-pending/:email', verifyJWT, async (req, res)
     res.status(500).send({ message: "Error retrieving assets", error });
   }
 });
+
+// Get all Employee Requested Assets for Employee where the status is pending
+app.get('/employee-requested-assets-pending-requests/:email', verifyJWT, async (req, res) => {
+  const email = req.params.email;
+
+  const query = {
+    'user.email': email,
+    status: "pending",
+  };
+
+  try {
+    const assets = await Employee_Requests.find(query).toArray();
+    res.send(assets);
+  } catch (error) {
+    res.status(500).send({ message: "Error retrieving assets", error });
+  }
+});
+
 
 //  API for Recent Approvals
 
