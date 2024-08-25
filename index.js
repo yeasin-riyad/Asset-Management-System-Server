@@ -428,7 +428,7 @@ app.get('/my-employee-list/:email',verifyJWT, async (req, res) => {
 // Employee Who is not Affiliated with any company....
 app.get('/unaffiliated-users/:email',verifyJWT, async (req, res) => {
   const email = req.params.email;
-  const unaffiliatedQuery = { 'HrEmail': { $exists: false } };
+  const unaffiliatedQuery = { 'HrEmail': { $exists: false },role:"employee" };
   const affiliatedQuery = { 'HrEmail': email };
   const packageLimitQuery={email}
 
@@ -459,7 +459,7 @@ app.get('/unaffiliated-users/:email',verifyJWT, async (req, res) => {
 
   // Update User Information...
   app.patch('/update-user-info/:email',verifyJWT, async (req, res) => {
-    const email = req.params.email;
+    const email = req.params?.email;
     const query = { email };
     const {HrEmail,companyName,companyLogoUrl}=req.body;
   
@@ -471,8 +471,9 @@ app.get('/unaffiliated-users/:email',verifyJWT, async (req, res) => {
         return res.status(404).send({ message: 'User not found' });
       }
   
-      if (user.HrEmail) {
-        return res.status(400).send({ message: 'HrEmail already exists' });
+      if (user?.HrEmail) {
+        return res.status(200).send({ message: 'HrEmail is already set for this user' });
+ 
       }
   
       // If HrEmail is not set, proceed with the update
@@ -502,7 +503,7 @@ app.get('/my-hr/:email',verifyJWT,async(req,res)=>{
 })
 
 // Get user Information.....
-app.get('/my-Info/:email',verifyJWT,async(req,res)=>{
+app.get('/my-Info/:email?',verifyJWT,async(req,res)=>{
   const email=req.params.email;
   const query={email}
   const result=await Users.findOne(query);
@@ -527,6 +528,7 @@ app.put('/update-user/:email',verifyJWT,async(req,res)=>{
 
 app.get('/my-team/:email?',verifyJWT, async (req, res) => {
   const email=req.params.email;
+  
   const query = { };
   if(email){
     query.HrEmail=email
@@ -721,6 +723,9 @@ app.patch('/update-status/:id',verifyJWT,async(req,res)=>{
   }
   if (status === "approved") {
     updateDoc.$set.approvalDate = new Date();
+  }
+  if (status === "returned") {
+    updateDoc.$set.returnedDate = new Date();
   }
   const result=await Employee_Requests.updateOne(query,updateDoc,{upsert:true});
   res.send(result)
