@@ -431,6 +431,7 @@ app.get('/unaffiliated-users/:email',verifyJWT, async (req, res) => {
   const unaffiliatedQuery = { 'HrEmail': { $exists: false },role:"employee" };
   const affiliatedQuery = { 'HrEmail': email };
   const packageLimitQuery={email}
+  const EmailArray=[];
 
   try {
     // Query for unaffiliated users
@@ -438,14 +439,17 @@ app.get('/unaffiliated-users/:email',verifyJWT, async (req, res) => {
 
     // Query for the count of affiliated users
     const affiliatedCount = await Users.countDocuments(affiliatedQuery);
-        // Query for the Package Limit...
+    const affiliatedUsers=await Users.find(affiliatedQuery).toArray()
 
         const packageLimit=await Users.findOne(packageLimitQuery)
-
+const affiliatedMembers=affiliatedUsers.map(singleMember=>{
+  EmailArray.push(singleMember.email)
+})
 
 
 
     res.send({
+      EmailArray,
       unaffiliatedUsers,
       affiliatedCount,
       packageLimit:packageLimit.Package
