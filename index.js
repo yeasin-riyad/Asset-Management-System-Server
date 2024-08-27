@@ -495,6 +495,25 @@ const affiliatedMembers=affiliatedUsers.map(singleMember=>{
       res.status(500).send({ message: 'An error occurred', error });
     }
   });
+
+
+  // Set Block Status From Admin
+app.patch('/block-manager/:email',verifyJWT, async (req, res) => {
+  const { email } = req.params;
+  const { block } = req.body; 
+  
+
+  try {
+    // Update the user's block status
+    await Users.updateOne({ email, role: 'manager' }, { $set: { block } });
+
+    res.status(200).json({ message: `Manager ${block ? 'blocked' : 'unblocked'} successfully` });
+  } catch (error) {
+    console.error('Error updating manager block status:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
  
 
 //Check Who is MY HR Manager.......
@@ -514,6 +533,23 @@ app.get('/my-Info/:email?',verifyJWT,async(req,res)=>{
   res.send(result)
 
 })
+
+// get all users For Admin except the Admin Email
+app.get('/all-users/:email',verifyJWT, async (req, res) => {
+  const { email } = req.params;
+
+  try {
+    // Fetch all users except the one with the specified email
+    const users = await Users.find({ email: { $ne: email } }).toArray();
+    
+    // Return the list of users
+    res.status(200).send(users);
+  } catch (error) {
+    // Handle any errors that occur during the query
+    console.error('Error fetching users:', error);
+    res.status(500).send({ message: 'Internal server error' });
+  }
+});
 
 // Update An User....
 app.put('/update-user/:email',verifyJWT,async(req,res)=>{
