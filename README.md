@@ -24,7 +24,7 @@ This repository contains the server-side code for the **Track-My-Assets** platfo
 
 1. **Clone the repository**:
     ```bash
-    git clone https://github.com/your-username/track-my-assets-server.git
+    git clone https://github.com/yeasin-riyad/track-my-assets-server.git
     cd track-my-assets-server
     ```
 
@@ -79,24 +79,6 @@ Below are some of the key API endpoints provided by the server:
 
 The server includes comprehensive error handling to provide informative error messages and appropriate HTTP status codes for various scenarios such as invalid input, unauthorized access, or resource not found.
 
-### Deployment
 
-To deploy this server to a production environment:
 
-1. Set up your environment variables in the production environment.
-2. Use a process manager like **PM2** to run the server continuously:
-    ```bash
-    npm install -g pm2
-    pm2 start server.js
-    ```
-3. Ensure MongoDB is properly configured and accessible from your production server.
 
-## Contributing
-
-Contributions are welcome! Please fork the repository and submit a pull request for any bug fixes or enhancements.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
- client.
-Data Validation: Ensures data integrity by validating inputs using middleware and Mongoose schemas.
